@@ -205,6 +205,8 @@ button{letter-spacing:.02em}
 .finder{width:200px;gap:8px !important}
 .finder .ft{writing-mode:horizontal-tb !important;border:0 !important;padding:0 !important;margin:0 !important;font:500 var(--t12)/1 var(--sans) !important;letter-spacing:.06em !important;color:var(--sub)}
 .oct{width:200px;height:212px;display:block;overflow:visible}
+.finder .fhint{margin:0;width:200px;box-sizing:border-box;padding:8px 10px;background:var(--paper);border:1px solid var(--line);font:500 var(--t12)/1.6 var(--sans);letter-spacing:.04em;color:var(--ink);text-align:center;opacity:0;transform:translateY(-4px);transition:opacity .3s,transform .3s;pointer-events:none}
+.finder .fhint.show{opacity:1;transform:none}
 .oct .mark{fill:var(--ink)}
 .oct .wheel{transform-origin:100px 100px;transform-box:view-box;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
 .oct .seg{cursor:pointer;outline:none}
@@ -280,6 +282,7 @@ button{letter-spacing:.02em}
 @media (max-aspect-ratio: 4/5){
   .side{padding:16px 16px max(16px,env(safe-area-inset-bottom,0px) + 10px);gap:16px}
   .finder{flex-direction:column;top:max(12px,env(safe-area-inset-top,0px) + 8px);bottom:auto;left:12px;right:auto;width:132px;overflow:visible}
+  .finder .fhint{width:132px;text-align:left;font-size:11px}   /* スマホ：部品の幅（132px）に合わせる */
   .finder .ft{display:block}
   .oct{width:132px;height:140px}
   .note{top:auto !important;left:auto !important;right:12px;bottom:calc(50svh + 10px) !important;text-align:right}   /* スマホ：八角形と重ならないよう、立体の画面の右下に */
@@ -707,7 +710,8 @@ function syncAdd(){                                               // 器の札�
 function unfocus(){ focusIdx = -1; $('#peek').classList.remove('show'); }
 $('#add').addEventListener('click', () => { if (focusIdx >= 0){ addSel(focusIdx); unfocus(); } });   // 加えたあとは、棚の前に戻る（全体には戻らない）
 $('#back').addEventListener('click', unfocus);
-const step = d => { if (focusIdx < 0) return; focusJar((focusIdx + d + V.length) % V.length); };      // 棚に戻らずに、隣の品種へ
+const step = d => { if (focusIdx < 0) return; let i = focusIdx;                  // 棚に戻らずに、隣の品種へ（絞り込み中は、前に出ている品種だけを順に）
+  for (let k = 0; k < V.length; k++){ i = (i + d + V.length) % V.length; if (matchF(i)) break; } focusJar(i); };
 $('#prev').addEventListener('click', () => step(-1)); $('#next').addEventListener('click', () => step(1));
 addEventListener('keydown', e => { if (e.key === 'Escape'){ unfocus(); closeList(); }
   if (focusIdx >= 0 && !e.target.closest('.dial') && !e.target.closest('input')){ if (e.key === 'ArrowRight'){ step(1); e.preventDefault(); } if (e.key === 'ArrowLeft'){ step(-1); e.preventDefault(); } } });
@@ -732,11 +736,18 @@ let octRot = 0;
   finder.innerHTML = `<span class="ft">特徴で探す</span><svg class="oct" viewBox="0 0 200 212" aria-label="特徴で探す"><path class="mark" d="M100 8 l-6 -8 h12 z"/>
     <g transform="translate(0 12)"><g class="wheel">${seg}</g><g class="hub" role="button" tabindex="0" aria-label="全体を見る"><circle cx="100" cy="100" r="${OCT.r - 6}"/><text x="100" y="100">全体</text></g></g></svg>`; }
 const wheel = finder.querySelector('.wheel');
+const fhint = document.createElement('p'); fhint.className = 'fhint'; fhint.setAttribute('aria-live', 'polite'); finder.appendChild(fhint);   // 暗い器を押したときの案内
+let fhintT = 0;
+function showFilterHint(){                                        // 絞り込み中に、暗い（対象外の）器を押したとき
+  fhint.textContent = `「${AX[filterAx]}」で絞り込んでいます。全体を押すと、すべての品種を選べます。`;
+  fhint.classList.add('show'); clearTimeout(fhintT); fhintT = setTimeout(() => fhint.classList.remove('show'), 3200);
+}
 function setFilter(i){
   filterAx = filterAx === i ? -1 : i;
   finder.querySelectorAll('.seg').forEach(g => { const on = +g.dataset.ax === filterAx; g.classList.toggle('on', on); g.setAttribute('aria-pressed', on); });
   if (filterAx >= 0){ const want = -filterAx * 45; octRot += ((want - octRot) % 360 + 540) % 360 - 180; viewMode = 'shelf'; unfocus(); }   // 近い向きに回す
   wheel.style.transform = `rotate(${octRot}deg)`; finder.querySelectorAll('.seg text').forEach(t => t.style.transform = `rotate(${-octRot}deg)`);
+  if (filterAx < 0) fhint.classList.remove('show');               // 絞り込みを外したら、案内も消す
 }
 finder.querySelectorAll('.seg').forEach(g => { g.addEventListener('click', () => setFilter(+g.dataset.ax)); g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ setFilter(+g.dataset.ax); e.preventDefault(); } }); });
 const hub = finder.querySelector('.hub'), toWhole = () => { unfocus(); viewMode = 'overview'; if (filterAx >= 0) setFilter(filterAx); };
@@ -749,12 +760,14 @@ const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), glassList = jars.m
 let hoverIdx = -1, downAt = null;
 function pick(e){ const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, cam); const h = ray.intersectObjects(glassList, false)[0]; return h ? h.object.userData.idx : -1; }
 const tipEl = $('#tip');
-canvas.addEventListener('pointermove', e => { if (running) return; hoverIdx = pick(e); canvas.classList.toggle('hover', hoverIdx >= 0);
+canvas.addEventListener('pointermove', e => { if (running) return; hoverIdx = pick(e); if (hoverIdx >= 0 && !matchF(hoverIdx)) hoverIdx = -1;   // 暗い器の上では、何も出さない
+  canvas.classList.toggle('hover', hoverIdx >= 0);
   if (hoverIdx >= 0 && focusIdx < 0 && e.pointerType !== 'touch'){ const v = V[hoverIdx]; tipEl.innerHTML = `<b>${v.name}</b><span>${v.kana}</span><br>${tagsOf(hoverIdx).join('・')}`; tipEl.style.left = e.clientX + 'px'; tipEl.style.top = e.clientY + 'px'; tipEl.classList.add('show'); }
   else tipEl.classList.remove('show'); });
 canvas.addEventListener('pointerleave', () => tipEl.classList.remove('show'));
 canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
-canvas.addEventListener('pointerup', e => { if (running || !downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null; if (moved > 8) return; const i = pick(e); if (i >= 0) focusJar(i); else if (focusIdx >= 0) unfocus(); });
+canvas.addEventListener('pointerup', e => { if (running || !downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null; if (moved > 8) return; const i = pick(e); if (i >= 0 && !matchF(i)){ showFilterHint(); return; }   // 絞り込み中は、暗い器は押せない（案内を出す）
+  if (i >= 0) focusJar(i); else if (focusIdx >= 0) unfocus(); });
 
 /* ---------------- ラベル ---------------- */
 const KANJI_NUM = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
