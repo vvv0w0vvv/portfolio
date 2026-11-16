@@ -559,7 +559,12 @@ addEventListener('scroll', () => { if (lockY !== null && scrollY < lockY - 1) sc
 /* ---------------- スクロールの進み具合で場面を決める（区切りは仮の値） ---------------- */
 const TL = { draw: [0.12, 0.2059], tilt: [0.1903, 0.245], rise: [0.2371, 0.2918], orbit: [0.2918, 0.37], grow: [0.3075, 0.3621], approach: [0.37, 0.4324], open: [0.4324, 0.4636], strip: [0.4636, 0.4949], dolly: [0.4949, 0.9265] };
 let target = 0, prog = 0;
-const root3d = () => Math.max(1, $('#scrollRoot').offsetHeight - innerHeight);                 // 3Dの部分だけの、スクロールできる長さ
+let VH = innerHeight, VW = innerWidth;                                                         // 進み具合の計算に使う画面の高さ
+const SCROLL_VH = 2433;                                                                          // 3Dの部分の長さ（画面の高さの何倍か ×100）
+const setRootH = () => { $('#scrollRoot').style.height = Math.round(SCROLL_VH * VH / 100) + 'px'; };   // ページの長さも、計算に使う画面の高さから決める（ブラウザによって vh が変わっても、長さが変わらない）
+setRootH();
+addEventListener('resize', () => { if (innerWidth !== VW || Math.abs(innerHeight - VH) > 160){ VW = innerWidth; VH = innerHeight; setRootH(); } });   // iPhone のアドレスバーの出し入れ（約80〜100px）では変えない（変えると、スクロールしていないのに場面が戻ったり進んだりする）
+const root3d = () => Math.max(1, $('#scrollRoot').offsetHeight - VH);                          // 3Dの部分だけの、スクロールできる長さ
 const readScroll = () => { target = clamp(scrollY / root3d(), 0, 1); };
 addEventListener('scroll', readScroll, { passive: true });
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); [camA, camB].forEach(c => { c.aspect = w / h; c.updateProjectionMatrix(); }); }
@@ -719,7 +724,11 @@ epd.addEventListener('click', e => { if (e.target === epd) epd.close(); });
 (() => {
   if (!matchMedia('(pointer: coarse)').matches) return;
   const VMAX = 1.0, TAU = 200;                                      // VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）。離したあとに進むのは最大で約 VMAX×TAU＝200px
-  const Kat = () => scrollY / root3d() < TL.strip[1] ? 1.8 : 1.2;    // 指の動きの何倍進むか：宇宙船の墜落〜部屋に入るまでは 1.8 倍、部屋の中から先は 1.2 倍（仮の値）
+  const K_IN = 1.8, ROOM = (TL.dolly[1] - TL.dolly[0]) / 9;          // 部屋の中：1区間（次の人まで）を、指で約2回で進む倍率（仮の値）
+  const SCENES = [[0, CRASH.fall[1]], [CRASH.fall[1], CRASH.cam[0]], [CRASH.cam[0], TL.draw[1]], [TL.draw[1], TL.rise[1]], [TL.rise[1], TL.orbit[1]],
+                  [TL.orbit[1], TL.approach[1]], [TL.approach[1], TL.strip[1]], [TL.dolly[1], 1]];   // 墜落・待ち・図面・壁・回り込み・ドアへ・部屋の中へ・流れ星
+  const Kat = () => { const f = scrollY / root3d(), sc = SCENES.find(([a, b]) => f >= a && f < b);   // 指の動きの何倍進むか：どの場面も、部屋の中の1区間と同じ指の回数（約2回）で次へ
+    return sc ? K_IN * (sc[1] - sc[0]) / ROOM : K_IN; };
   const endY = () => root3d(), minY = () => lockY ?? 0;               // 場面が動く部分の終わり／戻れる上限（家に入ったあとは玄関のドア）
   const inRegion = d => scrollY < endY() - 1 || (scrollY <= endY() + 2 && d < 0);   // 終わりより先（おしらせ以降）は、ふつうのスクロール
   const go = y => scrollTo(0, Math.max(minY(), Math.min(y, endY())));
