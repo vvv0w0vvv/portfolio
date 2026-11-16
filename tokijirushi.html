@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>鴇印製油：どう作る</title>
+<title>鴇印製油</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 文字：Zen Kaku Gothic New（https://fonts.google.com/specimen/Zen+Kaku+Gothic+New ）・Inter（https://fonts.google.com/specimen/Inter ）
@@ -581,6 +581,31 @@ $('#contactForm').addEventListener('submit', e => {
   if (bad){ bad.focus(); bad.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 320 }); return; }
   contact.classList.add('sent');
 });
+/* スマホなど指で操作する機器：このページが自分でスクロールを動かす
+   ブラウザの勢いまかせのスクロール（指を離したあとも何画面分も進む）を止めて、
+   指の動いた分だけ進め（K 倍）、指を離したあとは少しだけ勢いで進んで、すぐ止まる（最大でも約 VMAX×TAU px）。値は仮
+   お問い合わせのフォームが出ているときは、フォームの中の操作（入力・フォームの中のスクロール）はふつうのまま */
+if (touch){
+  const K = 1.6, VMAX = 1.4, TAU = 220;
+  const maxY = () => Math.max(0, journey.offsetTop + journey.offsetHeight - innerHeight);
+  const go = y => scrollTo(0, Math.max(0, Math.min(y, maxY())));
+  let lastY = null, lastT = 0, vel = 0, raf = 0, on = false, inForm = false;
+  addEventListener('touchstart', e => { if (e.touches.length !== 1){ on = false; return; }
+    cancelAnimationFrame(raf); on = true; inForm = contact.classList.contains('live') && !!e.target.closest('#contact');
+    lastY = e.touches[0].clientY; lastT = performance.now(); vel = 0; }, { passive: true });
+  addEventListener('touchmove', e => { if (!on) return;
+    const y = e.touches[0].clientY, t = performance.now(), d = (lastY - y) * K, dt = Math.max(1, t - lastT);
+    lastY = y; lastT = t;
+    if (inForm && !(contact.scrollTop <= 0 && d < 0)){ vel = 0; return; }   // フォームの中：ふつうのスクロール（フォームのいちばん上で戻すときだけ、ページを戻す）
+    e.preventDefault(); go(scrollY + d); vel = vel * 0.6 + (d / dt) * 0.4; }, { passive: false });
+  addEventListener('touchend', () => { if (!on) return; on = false;
+    let v = Math.max(-VMAX, Math.min(VMAX, vel)), prev = performance.now();
+    if (Math.abs(v) < 0.05) return;
+    const step = now => { const dt = Math.min(40, now - prev); prev = now; const y0 = scrollY;
+      go(scrollY + v * dt); v *= Math.exp(-dt / TAU);
+      if (Math.abs(v) > 0.02 && scrollY !== y0) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); }, { passive: true });
+}
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo(0, 0); requestAnimationFrame(loop);
 })();

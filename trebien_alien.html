@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>トレビアン★エイリアン（試作：団地の間取りから家の中へ）</title>
+<title>トレビアン★エイリアン</title>
 <!-- 架空の番組の試作。番組・人物・間取りはすべて架空。
      間取りの手本：公営住宅標準設計51C型の「台所兼食事室＋和室2室」の組み立て
        （褚秋霞「公営住宅標準設計51C型の成立と同時代の住戸型への影響に関する研究」筑波大学 https://tsukuba.repo.nii.ac.jp/record/55117/files/DA09534.pdf ）
@@ -705,6 +705,33 @@ document.querySelectorAll('.memo.ep').forEach(m => m.addEventListener('click', (
     <div class="scenes">${e.scenes.map(sc => `<figure><div class="shot">${sc.img ? `<img src="${sc.img}" alt="${sc.t}">` : '画像は準備中'}</div><figcaption><b>${sc.t}</b><span>${sc.d}</span></figcaption></figure>`).join('')}</div>`;
   ecard.querySelector('.x').addEventListener('click', () => epd.close()); epd.showModal(); }));
 epd.addEventListener('click', e => { if (e.target === epd) epd.close(); });
+
+
+/* ---------------- スマホなど指で操作する機器：場面が動く部分の間は、このページが自分でスクロールを動かす ----------------
+   ブラウザの勢いまかせのスクロール（指を離したあとも何画面分も進む）を止めて、
+   指の動いた分だけ進め（K 倍）、指を離したあとは少しだけ勢いで進んで、すぐ止まる（最大でも約 VMAX×TAU px）。値は仮 */
+(() => {
+  if (!matchMedia('(pointer: coarse)').matches) return;
+  const K = 1.6, VMAX = 1.4, TAU = 220;                             // K：指の動きの何倍進むか／VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）
+  const endY = () => root3d(), minY = () => lockY ?? 0;               // 場面が動く部分の終わり／戻れる上限（家に入ったあとは玄関のドア）
+  const inRegion = d => scrollY < endY() - 1 || (scrollY <= endY() + 2 && d < 0);   // 終わりより先（おしらせ以降）は、ふつうのスクロール
+  const go = y => scrollTo(0, Math.max(minY(), Math.min(y, endY())));
+  let lastY = null, lastT = 0, vel = 0, raf = 0, on = false;
+  addEventListener('touchstart', e => { if (e.touches.length !== 1 || e.target.closest('dialog')){ on = false; return; }
+    cancelAnimationFrame(raf); on = true; lastY = e.touches[0].clientY; lastT = performance.now(); vel = 0; }, { passive: true });
+  addEventListener('touchmove', e => { if (!on) return;
+    const y = e.touches[0].clientY, t = performance.now(), d = (lastY - y) * K, dt = Math.max(1, t - lastT);
+    lastY = y; lastT = t;
+    if (!inRegion(d)) { vel = 0; return; }
+    e.preventDefault(); go(scrollY + d); vel = vel * 0.6 + (d / dt) * 0.4; }, { passive: false });
+  addEventListener('touchend', () => { if (!on) return; on = false;
+    let v = Math.max(-VMAX, Math.min(VMAX, vel)), prev = performance.now();
+    if (Math.abs(v) < 0.05 || !inRegion(v)) return;
+    const step = now => { const dt = Math.min(40, now - prev); prev = now; const y0 = scrollY;
+      go(scrollY + v * dt); v *= Math.exp(-dt / TAU);
+      if (Math.abs(v) > 0.02 && scrollY !== y0 && inRegion(v)) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); }, { passive: true });
+})();
 
 readScroll(); requestAnimationFrame(frame);
 </script>
