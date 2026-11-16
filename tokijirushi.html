@@ -149,6 +149,26 @@ body{margin:0;background:#D9D3EE;color:var(--ink);font-family:"Zen Kaku Gothic N
 .scrollHint.gone{opacity:0}
 @keyframes wheel{0%{transform:translateY(0);opacity:0}25%{opacity:1}80%{transform:translateY(17px);opacity:0}100%{opacity:0}}
 @media (prefers-reduced-motion: reduce){.scrollHint::before{animation:none}}
+
+/* ===== スマホなど指で操作する機器：入力欄の文字は16px（iPhone は、16px より小さい入力欄を押すと画面を拡大し、入力を終えても元に戻らないため） ===== */
+@media (pointer: coarse){ .contact input[type=text],.contact input[type=email],.contact textarea{font-size:16px} }
+/* ===== スマホのフォーム：スクロールしなくても見える範囲を広げる（余白・見出し・欄の間隔・お問い合わせ内容の欄を小さく） ===== */
+@media (max-aspect-ratio: 4/5){
+  .contact{--pt:18px;--pr:18px;padding:18px 18px 14px;border-radius:24px}
+  .contact .head{margin-bottom:10px}
+  .contact .en{font-size:26px}
+  .contact .jaf{margin-top:8px;font-size:12px;padding:.45em 1.2em .48em calc(1.2em + .1em)}
+  .contact form{gap:10px}
+  .contact .f{gap:4px}
+  .contact .agree{margin-top:0}
+  .contact p.fake{font-size:10px;line-height:1.5}
+  .contact input[type=text],.contact input[type=email],.contact textarea{padding:10px 14px}
+  .contact textarea{min-height:0;height:72px}                              /* 欄の「4行」の指定より優先して、高さを小さく */
+  .contact .chips{gap:6px;flex-wrap:nowrap}
+  .contact .chips label{padding:8px 10px;font-size:12px;letter-spacing:.02em;white-space:nowrap}   /* お問い合わせの種類を1行に */
+  .contact form{grid-template-columns:1fr 1fr;column-gap:10px}              /* お名前と会社名を横に並べる（ほかの欄は、横いっぱい） */
+  .contact .send{padding-top:13px;padding-bottom:13px;margin-top:2px}
+}
 </style>
 </head>
 <body>
@@ -628,7 +648,8 @@ $('#contactForm').addEventListener('submit', e => {
 if (touch){
   const K = 1.2, VMAX = 1.0, TAU = 200;                             // K：指の動きの何倍進むか／VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）。離したあとに進むのは最大で約 VMAX×TAU＝200px
   const maxY = () => Math.max(0, journey.offsetTop + journey.offsetHeight - VH);
-  const go = y => scrollTo(0, Math.max(0, Math.min(y, maxY())));
+  const realMax = () => Math.min(maxY(), document.documentElement.scrollHeight - innerHeight);   // ページの本当のいちばん下（アドレスバーが小さくなっているときは、計算上のいちばん下より手前になる）
+  const go = y => scrollTo(0, Math.max(0, Math.min(y, realMax())));
   let lastY = null, lastT = 0, vel = 0, raf = 0, on = false, inForm = false, mode = null;
   addEventListener('touchstart', e => { if (e.touches.length !== 1){ on = false; return; }
     cancelAnimationFrame(raf); on = true; mode = null; inForm = contact.classList.contains('live') && !!e.target.closest('#contact');
@@ -638,7 +659,7 @@ if (touch){
     lastY = y; lastT = t;
     // 指の動かし始めに、ページを動かすか、フォームの中を動かすかを決める（1回の指の動きの間は変えない）
     // フォームの中を動かすのは、ページが最後まで進んで、フォームの部品がすべて現れたあとだけ（フォームのいちばん上で戻すときは、ページを戻す）
-    if (mode === null) mode = inForm && scrollY >= maxY() - 2 && !(contact.scrollTop <= 0 && d < 0) ? 'form' : 'page';
+    if (mode === null) mode = inForm && scrollY >= realMax() - 2 && !(contact.scrollTop <= 0 && d < 0) ? 'form' : 'page';
     if (mode === 'form'){ vel = 0; return; }
     e.preventDefault(); go(scrollY + d); vel = vel * 0.6 + (d / dt) * 0.4; }, { passive: false });
   addEventListener('touchend', () => { if (!on) return; on = false;
