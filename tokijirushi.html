@@ -28,7 +28,9 @@ body{margin:0;background:#D9D3EE;color:var(--ink);font-family:"Zen Kaku Gothic N
 .brand .name{font:900 24px/1 "Zen Old Mincho","Hiragino Mincho ProN",serif;letter-spacing:.12em;padding-left:.12em;margin-top:7px}
 .brand small{display:block;font:600 9.5px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.32em;padding-left:.32em;color:var(--ink);margin-top:6px}
 .journey{position:relative}
-.stage{position:sticky;top:0;height:100svh;overflow:hidden;overflow:clip;background:#D9D3EE}   /* clip：入力欄を選んだときに、ブラウザが箱を勝手に動かさないように */
+.stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;overflow:clip;background:#D9D3EE}   /* アドレスバーが小さくなっても、下にすき間が出ない高さ */
+:root{--bar:0px}
+@supports (height:100lvh){ :root{--bar:calc(100lvh - 100svh)} }   /* アドレスバーが出ているときに隠れる高さ（PCでは0） */   /* clip：入力欄を選んだときに、ブラウザが箱を勝手に動かさないように */
 .scene{position:absolute;inset:0;overflow:hidden;visibility:hidden}
 .scene > img.bg,.scene > img.front,.scene > img.under{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;user-select:none;pointer-events:none}
 .scene > img.under{z-index:0}
@@ -53,7 +55,7 @@ body{margin:0;background:#D9D3EE;color:var(--ink);font-family:"Zen Kaku Gothic N
 .story .frame .ch{display:inline-block;position:relative;will-change:transform,opacity,filter}
 .story .tx{font-weight:700;font-size:clamp(14px,1.28vw,24px);line-height:1.8;letter-spacing:.04em;margin-top:1.6em;text-shadow:0 1px 12px rgba(70,40,60,.5)}
 @media (max-aspect-ratio: 4/5){ .story .en{font-size:clamp(30px,9.4vw,60px)} .story .tx{line-height:1.9} .story .tx br{display:none} }  /* スマホは、PC向けの改行を使わず、画面の幅で折り返す */
-.dots{position:absolute;left:50%;transform:translateX(-50%);bottom:max(3svh,env(safe-area-inset-bottom,0px) + 10px);display:flex;gap:4px;z-index:14;transition:opacity .6s}
+.dots{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(3svh,env(safe-area-inset-bottom,0px) + 10px) + var(--bar));display:flex;gap:4px;z-index:14;transition:opacity .6s}
 .dot{position:relative;width:24px;height:24px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dot::before{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 0 0 0 rgba(255,255,255,0);transition:background .3s,transform .35s,box-shadow .35s}
 .dot.on::before{background:#fff;transform:scale(1.35)}
@@ -84,7 +86,7 @@ body{margin:0;background:#D9D3EE;color:var(--ink);font-family:"Zen Kaku Gothic N
 .cclose:hover span,.cclose:hover span::before{background:#fff}
 .cclose:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(166,119,114,.35)}
 /* 閉じたあとに出す「お問い合わせ」のボタン（押すと、カードがまた開く） */
-.creopen{position:absolute;left:50%;bottom:calc(max(3svh,env(safe-area-inset-bottom,0px) + 10px) + 30px);z-index:21;transform:translate(-50%,8px);opacity:0;pointer-events:none;
+.creopen{position:absolute;left:50%;bottom:calc(max(3svh,env(safe-area-inset-bottom,0px) + 10px) + 30px + var(--bar));z-index:21;transform:translate(-50%,8px);opacity:0;pointer-events:none;
   display:inline-flex;align-items:center;gap:10px;padding:14px 26px 14px 20px;border:0;border-radius:99px;background:var(--ink);color:#fff;font:700 13px/1 "Zen Kaku Gothic New",system-ui,sans-serif;letter-spacing:.12em;
   box-shadow:0 14px 34px rgba(97,60,68,.32);cursor:pointer;transition:opacity .45s,transform .45s cubic-bezier(.2,.8,.2,1)}
 .creopen.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
@@ -138,7 +140,7 @@ body{margin:0;background:#D9D3EE;color:var(--ink);font-family:"Zen Kaku Gothic N
 .contact p.fake,.contact .done p.fake{margin:2px 0 0;text-align:center;font-weight:500;font-size:11px;line-height:1.7;letter-spacing:.04em;color:#A11E17}   /* 架空のサイトであることの注意書き（赤 #A11E17：白80%のカードの上で、下の絵がいちばん暗いときも、文字との明るさの比が4.5以上。WCAGの計算式で計算） */
 .contact .done p.fake{margin-top:14px}
 @keyframes doneIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@media (max-aspect-ratio: 4/5){ .contact{top:auto;bottom:max(14px,env(safe-area-inset-bottom,0px) + 10px);max-height:calc(100svh - max(118px,env(safe-area-inset-top,0px) + 110px) - max(14px,env(safe-area-inset-bottom,0px) + 10px))} }  /* スマホ：左上のロゴの下から始まるよう、下側に寄せる */
+@media (max-aspect-ratio: 4/5){ .contact{top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom,0px) + 10px) + var(--bar));max-height:calc(100svh - max(118px,env(safe-area-inset-top,0px) + 110px) - max(14px,env(safe-area-inset-bottom,0px) + 10px))} }  /* スマホ：左上のロゴの下から始まるよう、下側に寄せる */
 @media (max-width: 560px){ .contact form{grid-template-columns:1fr} .contact .chips label{padding:9px 14px} .contact .send{width:100%;justify-content:center;padding-left:34px} }
 @media (prefers-reduced-motion: reduce){ .contact .send,.contact .send::before,.contact .send .ar{transition:none} }
 .scrollHint{position:absolute;left:50%;bottom:max(7svh,env(safe-area-inset-bottom,0px) + 24px);width:31px;height:50px;margin-left:-15.5px;border:1.6px solid rgba(97,60,68,.6);border-radius:17px;transition:opacity .6s;pointer-events:none;z-index:13;background:rgba(255,255,255,.4)}
@@ -335,9 +337,9 @@ DOT_NAMES.forEach((k, i) => {
   // 押すと、その工程の文字が読める位置まで、なめらかにスクロールする（位置は場面の中の 30% のところ。仮の値）
   dot.addEventListener('click', () => {
     const j = document.getElementById('journey');
-    if (i === DOT_NAMES.length - 1){ scrollTo({ top: j.offsetTop + j.offsetHeight - innerHeight, behavior: reduce ? 'auto' : 'smooth' }); return; }
+    if (i === DOT_NAMES.length - 1){ scrollTo({ top: j.offsetTop + j.offsetHeight - VH, behavior: reduce ? 'auto' : 'smooth' }); return; }
     const u = i === 0 ? 0 : BOUNDS[i] + (BOUNDS[i + 1] - BOUNDS[i]) * 0.30;
-    scrollTo({ top: j.offsetTop + u * (window.__base() - innerHeight), behavior: reduce ? 'auto' : 'smooth' });
+    scrollTo({ top: j.offsetTop + u * (window.__base() - VH), behavior: reduce ? 'auto' : 'smooth' });
   });
   $('#dots').appendChild(dot);
 });
@@ -396,7 +398,8 @@ KEYS.forEach((key, i) => {
   $('#scenes').appendChild(el); sceneEls.push({ el, bg, front, under, sprites, key });
 });
 
-let W = innerWidth, H = innerHeight, orient = '';
+let W = innerWidth, H = document.getElementById('stage').clientHeight || innerHeight, orient = '';   // H：場面の絵を描く高さ（場面の画面そのものの高さ）
+let VH = innerHeight, VW = innerWidth, formLockY = null, formUnlockT = 0;   // VH：進み具合の計算に使う画面の高さ（アドレスバーの出し入れ・キーボードでは変えない）／formLockY：入力中に固定するスクロールの位置
 function setOrient(){
   const o = W / H < 0.8 ? '9x16' : '16x9'; if (o === orient) return; orient = o;
   sceneEls.forEach(s => {
@@ -574,9 +577,19 @@ const creopen = $('#creopen');
 $('#cclose').addEventListener('click', () => { cClosed = true; creopen.focus({ preventScroll: true }); });
 creopen.addEventListener('click', () => { cClosed = false; $('#cclose').focus({ preventScroll: true }); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && !cClosed && $('#contact').classList.contains('live')) cClosed = true; });
-addEventListener('scroll', () => { yT = -journey.getBoundingClientRect().top; }, { passive: true });
+addEventListener('scroll', () => {
+  if (formLockY !== null){ if (Math.abs(scrollY - formLockY) > 1) scrollTo(0, formLockY); return; }   // 入力中は、ページを動かさない（場面もフォームもそのまま）
+  yT = -journey.getBoundingClientRect().top; }, { passive: true });
+document.getElementById('contact').addEventListener('focusin', e => { if (!e.target.matches('input, textarea')) return;
+  clearTimeout(formUnlockT); if (formLockY === null) formLockY = scrollY; });
+document.getElementById('contact').addEventListener('focusout', () => { clearTimeout(formUnlockT);
+  formUnlockT = setTimeout(() => { const y = formLockY; formLockY = null; if (Math.abs(innerHeight - VH) <= 160) { H = document.getElementById('stage').clientHeight || innerHeight; }
+    if (y !== null && Math.abs(scrollY - y) > 1) scrollTo(0, y); }, 900); });   // 固定を外すときは、固定した位置へ戻してから   // 入力を終えて約0.9秒（キーボードが閉じきるまで）は固定したまま
 window.__base = basePx;
-addEventListener('resize', () => { W = innerWidth; H = innerHeight; setOrient(); });
+addEventListener('resize', () => {
+  if (formLockY !== null) return;                                        // 入力中（キーボードが出ている間）は、何も変えない
+  if (innerWidth !== VW || Math.abs(innerHeight - VH) > 160){ VW = innerWidth; VH = innerHeight; }   // 画面を横向きにしたときなど、大きく変わったときだけ
+  W = innerWidth; H = document.getElementById('stage').clientHeight || innerHeight; setOrient(); });
 setOrient();
 const contact = $('#contact'), reveals = [...contact.querySelectorAll('.reveal')];
 // 念のため：場面の箱が勝手に動いたら、すぐ元に戻す
@@ -584,7 +597,7 @@ const stageEl = $('#stage'); stageEl.addEventListener('scroll', () => { stageEl.
 function loop(now){
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   yS = reduce ? yT : yS + (yT - yS) * (1 - Math.exp(-7 * dt));
-  const bp = basePx(), span = Math.max(1, bp - innerHeight);
+  const bp = basePx(), span = Math.max(1, bp - VH);
   uS = clamp(yS / span);                                                    // 場面の進み
   fS = clamp((yS - span) / Math.max(1, (journey.offsetHeight - bp) * 0.75)); // フォームの進み
   render(uS, now / 1000);
@@ -594,7 +607,7 @@ function loop(now){
   cK += ((cClosed ? 1 : 0) - cK) * (reduce ? 1 : 1 - Math.exp(-10 * dt));
   contact.style.opacity = (fo * (1 - cK)).toFixed(3);
   creopen.classList.toggle('on', cClosed && fS > 0.6);
-  const portraitF = innerWidth / innerHeight < 0.8;   // スマホは下側に寄せているので、縦の位置の基準を変える
+  const portraitF = innerWidth / VH < 0.8;   // スマホは下側に寄せているので、縦の位置の基準を変える
   contact.style.transform = `translate(-50%, ${((portraitF ? 0 : -50) + (1 - fo) * 6).toFixed(2)}%) scale(${(0.98 + 0.02 * fo).toFixed(4)})`;
   contact.classList.toggle('live', fo > 0.6 && !cClosed);
   reveals.forEach((el, k) => { const v = reduce ? fo : smooth(clamp((fS - 0.15 - k * 0.05) / 0.35)); el.style.opacity = v.toFixed(3); el.style.transform = `translateY(${((1 - v) * 14).toFixed(1)}px)`; });
@@ -614,7 +627,7 @@ $('#contactForm').addEventListener('submit', e => {
    お問い合わせのフォームが出ているときは、フォームの中の操作（入力・フォームの中のスクロール）はふつうのまま */
 if (touch){
   const K = 1.2, VMAX = 1.0, TAU = 200;                             // K：指の動きの何倍進むか／VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）。離したあとに進むのは最大で約 VMAX×TAU＝200px
-  const maxY = () => Math.max(0, journey.offsetTop + journey.offsetHeight - innerHeight);
+  const maxY = () => Math.max(0, journey.offsetTop + journey.offsetHeight - VH);
   const go = y => scrollTo(0, Math.max(0, Math.min(y, maxY())));
   let lastY = null, lastT = 0, vel = 0, raf = 0, on = false, inForm = false, mode = null;
   addEventListener('touchstart', e => { if (e.touches.length !== 1){ on = false; return; }
