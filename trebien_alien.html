@@ -456,7 +456,13 @@ function hitPuppet(e) {
     if (a.d[(iy * a.w + ix) * 4 + 3] > 40) return p; }       // 透明なところは素通り（後ろの人に届く）
   return null;
 }
-addEventListener('click', e => { const p = hitPuppet(e); if (p) p.jump = performance.now() / 1000; });
+/* タップ：指（またはマウス）が触れて、ほとんど動かずに離れたら（12px 未満・0.6秒未満）、その人が光って跳ねる
+   ※iPhone は、ボタンやリンクではない場所のタップでは、画面全体の click を送らないので、click では受け取らない */
+let tapAt = null;
+addEventListener('pointerdown', e => { tapAt = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive: true });
+addEventListener('pointerup', e => { if (!tapAt) return; const d = Math.hypot(e.clientX - tapAt.x, e.clientY - tapAt.y), dt = performance.now() - tapAt.t; tapAt = null;
+  if (d < 12 && dt < 600){ const p = hitPuppet(e); if (p) p.jump = performance.now() / 1000; } }, { passive: true });
+addEventListener('pointercancel', () => { tapAt = null; }, { passive: true });
 addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; $('#c').style.cursor = hitPuppet(e) ? 'pointer' : ''; });
 
 /* ---------------- 家の中：1人ずつにレンズを向けて寄り、少し止まってから次へ ----------------
@@ -712,7 +718,7 @@ epd.addEventListener('click', e => { if (e.target === epd) epd.close(); });
    指の動いた分だけ進め（K 倍）、指を離したあとは少しだけ勢いで進んで、すぐ止まる（最大でも約 VMAX×TAU px）。値は仮 */
 (() => {
   if (!matchMedia('(pointer: coarse)').matches) return;
-  const K = 1.6, VMAX = 1.4, TAU = 220;                             // K：指の動きの何倍進むか／VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）
+  const K = 1.2, VMAX = 1.0, TAU = 200;                             // K：指の動きの何倍進むか／VMAX：勢いの上限（px/ミリ秒）／TAU：勢いが弱まる速さ（ミリ秒）。離したあとに進むのは最大で約 VMAX×TAU＝200px
   const endY = () => root3d(), minY = () => lockY ?? 0;               // 場面が動く部分の終わり／戻れる上限（家に入ったあとは玄関のドア）
   const inRegion = d => scrollY < endY() - 1 || (scrollY <= endY() + 2 && d < 0);   // 終わりより先（おしらせ以降）は、ふつうのスクロール
   const go = y => scrollTo(0, Math.max(minY(), Math.min(y, endY())));
