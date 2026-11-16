@@ -293,6 +293,32 @@ button{letter-spacing:.02em}
   .peek{left:50%;padding:20px 22px 18px}
   .peek .pn{font-size:var(--t22)}
 }
+
+/* ===== 注文画面の「閉じる」：右上の角に「×」の印つきで置く。題名と閉じるの行は、注文画面の中をスクロールしても上に残る ===== */
+.order .box{position:relative;padding-top:0}
+.order .top{position:sticky;top:0;z-index:3;background:var(--paper);display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:20px;row-gap:10px;padding:28px 0 16px;margin:0 0 20px;border-bottom:1px solid var(--line)}
+.order .top h2{flex:none}
+.order .top .steps{justify-self:end}
+.oclose{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px 0 12px;border:1.5px solid var(--ink);border-radius:var(--r);background:var(--paper);color:var(--ink);font:700 var(--t14)/1 var(--sans);letter-spacing:.06em;cursor:pointer}
+.oclose .xm{position:relative;width:16px;height:16px}
+.oclose .xm::before,.oclose .xm::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:2px;margin:-1px 0 0 -9px;background:var(--ink);border-radius:1px;transform:rotate(45deg)}
+.oclose .xm::after{transform:rotate(-45deg)}
+.oclose:hover{background:var(--ink);color:#fff}.oclose:hover .xm::before,.oclose:hover .xm::after{background:#fff}
+.oclose:focus-visible{outline:3px solid rgba(168,140,87,.55);outline-offset:2px}
+@media (max-aspect-ratio: 4/5){
+  .order .top{grid-template-columns:1fr auto;padding:16px 0 12px;margin-bottom:16px}   /* スマホ：1行目に題名と閉じる、2行目に手順 */
+  .order .top .steps{grid-column:1 / -1;grid-row:2;justify-self:start}
+  /* ===== スマホの配合の欄：グラフ（左）と、品種の名前とダイヤル（右）を横に並べ、一緒に見えるようにする（ラベルを選ぶ場面は、今まで通り） ===== */
+  body:not(.labeling) .side{display:grid;grid-template-columns:44% 1fr;column-gap:10px;row-gap:12px;align-content:start}
+  body:not(.labeling) .side .radarWrap{grid-column:1;grid-row:1;max-width:none;width:100%;margin:0;align-self:center}
+  body:not(.labeling) .side .slots{grid-column:2;grid-row:1;align-self:center}
+  body:not(.labeling) .side > .msg,body:not(.labeling) .side > .row{grid-column:1 / -1}
+  body:not(.labeling) .slot{min-height:0;padding:10px 2px 8px}
+  body:not(.labeling) .slot .dial{width:60px;height:60px}
+  body:not(.labeling) .slot .rm{top:2px;right:0}
+  #radar{overflow:visible}
+  #radar text{font-size:27.5px}   /* グラフを小さくしても、特徴の名前が画面上で約12pxになる大きさ（グラフの幅157px÷枠の横360×27.5≒12px） */
+}
 </style>
 </head>
 <body>
@@ -324,7 +350,7 @@ button{letter-spacing:.02em}
 </aside>
 <div class="order min" id="order" role="dialog" aria-modal="true" aria-labelledby="ot">
   <div class="box">
-    <div class="top"><h2 id="ot">注文</h2><ol class="steps" id="steps"><li>1 内容</li><li>2 お届け先</li><li>3 確認</li></ol><button class="btn" id="oclose" type="button" style="flex:0 0 auto;padding:9px 16px">閉じる</button></div>
+    <div class="top"><h2 id="ot">注文</h2><ol class="steps" id="steps"><li>1 内容</li><li>2 お届け先</li><li>3 確認</li></ol><button class="oclose" id="oclose" type="button"><span class="xm" aria-hidden="true"></span>閉じる</button></div>
     <section class="ostep" data-s="1">
       <div class="osum"><img id="olabel" alt="選んだラベルの見本"><div><ul class="mixlist" id="omix"></ul>
         <div class="ogroup"><span class="lbl">量</span><div class="seg" id="osize"></div></div>
